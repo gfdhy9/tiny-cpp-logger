@@ -19,6 +19,16 @@ inline std::string GetTimeStamp(){
     std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
     return std::string(buf);
 }
+
+inline std::string FormatString(const char* fmt, ...){
+    va_list args;
+    va_start(args, fmt);
+    char buf[256] = {0};
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    return std::string(buf);
+}
+
 inline void Log (LogLevel level, const std::string& msg){
 	const char* levelStr = "UNKNOWN";
 	switch (level)
@@ -41,4 +51,7 @@ inline void Log (LogLevel level, const std::string& msg){
 	std::cout << "[" << GetTimeStamp() << "] [" << levelStr << "]" << msg << std::endl;
 } 
 
-
+#define LOG_INFO(...) Log(LogLevel::INFO, FormatString(__VA_ARGS__)) 
+#define LOG_WARN(...) Log(LogLevel::WARN, FormatString(__VA_ARGS__)) 
+#define LOG_ERROR(...) Log(LogLevel::ERROR, FormatString(__VA_ARGS__)) 
+#define LOG_FATAL(...) Log(LogLevel::FATAL, FormatString(__VA_ARGS__)) 
