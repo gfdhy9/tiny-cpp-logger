@@ -2,12 +2,8 @@
 
 #include<iostream>
 #include<string>
-
-constexpr const char* COLOR_INFO    = "\033[37m";
-constexpr const char* COLOR_WARN    = "\033[33m";
-constexpr const char* COLOR_ERROR   = "\033[31m";
-constexpr const char* COLOR_FATAL   = "\033[35m";
-constexpr const char* COLOR_RESET   = "\033[0m";
+#include<ctime>
+#include<cstdarg>
 
 enum class LogLevel {
 	INFO,
@@ -16,32 +12,33 @@ enum class LogLevel {
 	FATAL
 };
 
-
-inline void Log(LogLevel level, const std::string& msg){
-	const char* levelColor = COLOR_RESET;
+inline std::string GetTimeStamp(){
+	std::time_t now = std::time(nullptr);
+    std::tm local_tm = *std::localtime(&now);
+    char buf[64] = {0};
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
+    return std::string(buf);
+}
+inline void Log (LogLevel level, const std::string& msg){
 	const char* levelStr = "UNKNOWN";
-	switch(level)
+	switch (level)
 	{
 	case LogLevel::INFO:
-		levelColor = COLOR_INFO;
 		levelStr = "INFO";
 		break;
 	case LogLevel::WARN:
-		levelColor = COLOR_WARN;
 		levelStr = "WARN";
 		break;
 	case LogLevel::ERROR:
-		levelColor = COLOR_ERROR;
 		levelStr = "ERROR";
 		break;
 	case LogLevel::FATAL:
-		levelColor = COLOR_FATAL;
 		levelStr = "FATAL";
 		break;
 	default:
 		break;
 	}
-	std::cout << levelColor << "[" << levelStr << "]" << msg << COLOR_RESET << std::endl;
+	std::cout << "[" << GetTimeStamp() << "] [" << levelStr << "]" << msg << std::endl;
 } 
 
 
