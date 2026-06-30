@@ -4,6 +4,8 @@
 #include<string>
 #include<ctime>
 #include<cstdarg>
+#include<fstream>
+
 
 enum class LogLevel {
 	INFO,
@@ -11,6 +13,21 @@ enum class LogLevel {
 	ERROR,
 	FATAL
 };
+
+static std::ofstream log_file;
+constexpr const char* LOG_PATH = "log.txt";
+
+inline InitFile(){
+	log_file.open(LOG_PATH, std::ios::out | std::ios::app);
+	if (log_file.is_open()){
+		log_file << "==================== Program Start ====================" << std::endl;
+	}
+}
+
+inline CloseFile(){
+	if(log_file.is_open())
+		log_file.close();
+}
 
 inline std::string GetTimeStamp(){
 	std::time_t now = std::time(nullptr);
@@ -48,7 +65,11 @@ inline void Log (LogLevel level, const std::string& msg){
 	default:
 		break;
 	}
-	std::cout << "[" << GetTimeStamp() << "] [" << levelStr << "]" << msg << std::endl;
+	std::string time = GetTimeStamp();
+	std::string logContent = "[" + time + "] [" + levelStr + "]" + msg; 
+	if(log_file.is_open()){
+		log_file << logContent << std::endl;
+	}
 } 
 
 #define LOG_INFO(...) Log(LogLevel::INFO, FormatString(__VA_ARGS__)) 
