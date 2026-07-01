@@ -6,7 +6,6 @@
 #include<cstdarg>
 #include<fstream>
 
-
 enum class LogLevel {
 	INFO,
 	WARN,
@@ -17,14 +16,16 @@ enum class LogLevel {
 static std::ofstream log_file;
 constexpr const char* LOG_PATH = "log.txt";
 
-inline InitFile(){
+inline void InitFile(){
 	log_file.open(LOG_PATH, std::ios::out | std::ios::app);
-	if (log_file.is_open()){
+	(!log_file.is_open()){
+		std::cout << "[FATAL] Log file open failed, no log will be saved!" << std::endl;
+	}else{
 		log_file << "==================== Program Start ====================" << std::endl;
 	}
 }
 
-inline CloseFile(){
+inline void CloseFile(){
 	if(log_file.is_open())
 		log_file.close();
 }
@@ -66,7 +67,7 @@ inline void Log (LogLevel level, const std::string& msg){
 		break;
 	}
 	std::string time = GetTimeStamp();
-	std::string logContent = "[" + time + "] [" + levelStr + "]" + msg; 
+	std::string logContent = "[" + time + "] [" + levelStr + "] " + msg; 
 	if(log_file.is_open()){
 		log_file << logContent << std::endl;
 	}
