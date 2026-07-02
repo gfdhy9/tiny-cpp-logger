@@ -18,7 +18,7 @@ constexpr const char* LOG_PATH = "log.txt";
 
 inline void InitFile(){
 	log_file.open(LOG_PATH, std::ios::out | std::ios::app);
-	(!log_file.is_open()){
+	if(!log_file.is_open()){
 		std::cout << "[FATAL] Log file open failed, no log will be saved!" << std::endl;
 	}else{
 		log_file << "==================== Program Start ====================" << std::endl;
