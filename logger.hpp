@@ -5,6 +5,7 @@
 #include<ctime>
 #include<cstdarg>
 #include<fstream>
+#include <mutex>
 
 enum class LogLevel {
 	INFO,
@@ -14,6 +15,9 @@ enum class LogLevel {
 };
 
 static std::ofstream log_file;
+static std::mutex log_mtx;
+static LogLevel MIN_LOG_LEVEL = LogLevel::INFO;
+
 constexpr const char* LOG_PATH = "log.txt";
 
 inline void InitFile(){
@@ -48,7 +52,9 @@ inline std::string FormatString(const char* fmt, ...){
 }
 
 inline void Log (LogLevel level, const std::string& msg){
+	if(level < MIN_LOG_LEVEL) return;
 	const char* levelStr = "UNKNOWN";
+	
 	switch (level)
 	{
 	case LogLevel::INFO:
@@ -68,6 +74,7 @@ inline void Log (LogLevel level, const std::string& msg){
 	}
 	std::string time = GetTimeStamp();
 	std::string logContent = "[" + time + "] [" + levelStr + "] " + msg; 
+	std::lock_guard<std::mutex> lock(log_mtx);
 	if(log_file.is_open()){
 		log_file << logContent << std::endl;
 	}
