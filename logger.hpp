@@ -16,12 +16,28 @@ enum class LogLevel {
 
 static std::ofstream log_file;
 static std::mutex log_mtx;
+static std::string current_log_date;
 static LogLevel MIN_LOG_LEVEL = LogLevel::INFO;
 
 constexpr const char* LOG_PATH = "log.txt";
 
+inline std::string GetTodayDate(){
+	std::time_t now = std::time(nullptr);
+    std::tm local_tm = *std::localtime(&now);
+    char buf[32] = {0};
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d", &local_tm);
+    return std::string(buf);
+}
+
+inline std::string GetDailyLogName(){
+	return "log_" + GetTodayDate() + ".txt";
+}
+
 inline void InitFile(){
-	log_file.open(LOG_PATH, std::ios::out | std::ios::app);
+	std::string today = GetTodayDate();
+	std::string filename = GetDailyLogName();
+	current_log_date = today;
+	log_file.open(filename, std::ios::out | std::ios::app);
 	if(!log_file.is_open()){
 		std::cout << "[FATAL] Log file open failed, no log will be saved!" << std::endl;
 	}else{
@@ -72,9 +88,16 @@ inline void Log (LogLevel level, const std::string& msg){
 	default:
 		break;
 	}
+	std::lock_guard<std::mutex> lock(log_mtx);
+	std::string today = GetTodayDate();
+	if(today != current_log_date){
+		log_file.close();
+		std::string newFile = GetDailyLogName();
+		log_file.open(newFile, std::ios::out | std::ios::app);
+		current_log_date = today;
+	}
 	std::string time = GetTimeStamp();
 	std::string logContent = "[" + time + "] [" + levelStr + "] " + msg; 
-	std::lock_guard<std::mutex> lock(log_mtx);
 	if(log_file.is_open()){
 		log_file << logContent << std::endl;
 	}
