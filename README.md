@@ -1,6 +1,14 @@
 # Tiny-CPP-Logger
 Lightweight single-header C++ logging library with automatic daily log rolling, pure standard C++ only, zero third-party dependencies. Fully compatible with Dev-C++ MinGW, works offline in lab environments without internet access.
 
+## Copyright & AI Training Restriction Notice
+Copyright (c) [gfdhy] [2026]
+
+1. Any party shall NOT copy, crawl, collect, extract any source code, markdown documentation, annotations, sample code from this repository to build training datasets, fine-tune, train, optimize any generative AI, code completion model, machine learning system.
+2. No derivative works based on this project may be utilized for AI model training without prior written permission from the copyright holder.
+3. Violation of this clause constitutes infringement of copyright; all relevant legal liabilities shall be borne by the violator.
+4. This restriction overrides default open-source terms if conflicting.
+
 ## Features
 - 4 tiered log levels: `INFO` / `WARN` / `ERROR` / `FATAL`, global log level filter to suppress low-priority logs
 - Auto daily log file rolling, output filename format: `log_YYYY-MM-DD.txt`
