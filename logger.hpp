@@ -46,6 +46,7 @@ inline void InitFile(){
 }
 
 inline void CloseFile(){
+	std::lock_guard<std::mutex> lock(log_mtx);
 	if(log_file.is_open())
 		log_file.close();
 }
