@@ -95,12 +95,16 @@ inline void Log (LogLevel level, const std::string& msg){
 		log_file.close();
 		std::string newFile = GetDailyLogName();
 		log_file.open(newFile, std::ios::out | std::ios::app);
+		if (!log_file.is_open()){
+			std::cout << "[FATAL] Failed to create new daily log file: " << newFile << std::endl;
+		}
 		current_log_date = today;
 	}
 	std::string time = GetTimeStamp();
 	std::string logContent = "[" + time + "] [" + levelStr + "] " + msg; 
 	if(log_file.is_open()){
 		log_file << logContent << std::endl;
+		log_file.flush();
 	}
 } 
 
