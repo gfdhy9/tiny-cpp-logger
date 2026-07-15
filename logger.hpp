@@ -69,7 +69,6 @@ inline std::string FormatString(const char* fmt, ...){
 }
 
 inline void Log (LogLevel level, const std::string& msg){
-	if(level < MIN_LOG_LEVEL) return;
 	const char* levelStr = "UNKNOWN";
 	
 	switch (level)
@@ -108,7 +107,7 @@ inline void Log (LogLevel level, const std::string& msg){
 	}
 } 
 
-#define LOG_INFO(...) Log(LogLevel::INFO, FormatString(__VA_ARGS__)) 
-#define LOG_WARN(...) Log(LogLevel::WARN, FormatString(__VA_ARGS__)) 
-#define LOG_ERROR(...) Log(LogLevel::ERROR, FormatString(__VA_ARGS__)) 
-#define LOG_FATAL(...) Log(LogLevel::FATAL, FormatString(__VA_ARGS__)) 
+#define LOG_INFO(...)  do{ if(LogLevel::INFO >= MIN_LOG_LEVEL) Log(LogLevel::INFO, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_WARN(...)  do{ if(LogLevel::WARN >= MIN_LOG_LEVEL) Log(LogLevel::WARN, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_ERROR(...) do{ if(LogLevel::ERROR >= MIN_LOG_LEVEL) Log(LogLevel::ERROR, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_FATAL(...) do{ if(LogLevel::FATAL >= MIN_LOG_LEVEL) Log(LogLevel::FATAL, FormatString(__VA_ARGS__)); }while(0)
