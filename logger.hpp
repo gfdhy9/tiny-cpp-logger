@@ -91,13 +91,17 @@ inline void Log (LogLevel level, const std::string& msg){
 	std::lock_guard<std::mutex> lock(log_mtx);
 	std::string today = GetTodayDate();
 	if(today != current_log_date){
-		log_file.close();
 		std::string newFile = GetDailyLogName();
-		log_file.open(newFile, std::ios::out | std::ios::app);
-		if (!log_file.is_open()){
+		std::ofstream test(newFile, std::ios::out | std::ios::app);
+		if (test.is_open()){
+			test.close();
+			log_file.close();
+			log_file.open(newFile, std::ios::out | std::ios::app);
+			current_log_date = today;
+		}
+		else{
 			std::cout << "[FATAL] Failed to create new daily log file: " << newFile << std::endl;
 		}
-		current_log_date = today;
 	}
 	std::string time = GetTimeStamp();
 	std::string logContent = "[" + time + "] [" + levelStr + "] " + msg; 
