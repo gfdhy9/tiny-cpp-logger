@@ -34,6 +34,11 @@ inline std::string GetDailyLogName(){
 }
 
 inline void InitFile(){
+	static bool log_inited = false;
+	std::lock_guard<std::mutex> lock(log_mtx);
+	if(log_inited == true){
+		return;
+	}
 	std::string today = GetTodayDate();
 	std::string filename = GetDailyLogName();
 	current_log_date = today;
@@ -43,6 +48,7 @@ inline void InitFile(){
 	}else{
 		log_file << "==================== Program Start ====================" << std::endl;
 	}
+	log_inited = true; 
 }
 
 inline void CloseFile(){
