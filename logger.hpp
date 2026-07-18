@@ -69,8 +69,11 @@ inline std::string FormatString(const char* fmt, ...){
     va_list args;
     va_start(args, fmt);
     char buf[256] = {0};
-    vsnprintf(buf, sizeof(buf), fmt, args);
+    int ret = vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
+    if (ret < 0 || ret >= static_cast<int>(sizeof(buf))){
+        std::cout << "[WARN] Log message truncated, max length 256" << std::endl;
+    }
     return std::string(buf);
 }
 
