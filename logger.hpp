@@ -19,8 +19,6 @@ static std::mutex log_mtx;
 static std::string current_log_date;
 static LogLevel MIN_LOG_LEVEL = LogLevel::INFO;
 
-constexpr const char* LOG_PATH = "log.txt";
-
 inline std::string GetTodayDate(){
 	std::time_t now = std::time(nullptr);
     std::tm local_tm = *std::localtime(&now);
