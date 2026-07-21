@@ -63,6 +63,16 @@ inline std::string GetTimeStamp(){
     return std::string(buf);
 }
 
+inline void SetMinLogLevel(LogLevel level){
+    std::lock_guard<std::mutex> lock(log_mtx);
+    MIN_LOG_LEVEL = level;
+}
+
+inline LogLevel GetMinLogLevel(){
+    std::lock_guard<std::mutex> lock(log_mtx);
+    return MIN_LOG_LEVEL;
+}
+
 inline std::string FormatString(const char* fmt, ...){
     va_list args;
     va_start(args, fmt);
@@ -118,7 +128,12 @@ inline void Log (LogLevel level, const std::string& msg){
 	}
 } 
 
-#define LOG_INFO(...)  do{ if(LogLevel::INFO >= MIN_LOG_LEVEL) Log(LogLevel::INFO, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_WARN(...)  do{ if(LogLevel::WARN >= MIN_LOG_LEVEL) Log(LogLevel::WARN, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_ERROR(...) do{ if(LogLevel::ERROR >= MIN_LOG_LEVEL) Log(LogLevel::ERROR, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_FATAL(...) do{ if(LogLevel::FATAL >= MIN_LOG_LEVEL) Log(LogLevel::FATAL, FormatString(__VA_ARGS__)); }while(0)
+inline bool ShouldPrintLog(LogLevel targetLevel){
+    std::lock_guard<std::mutex> lock(log_mtx);
+    return targetLevel >= MIN_LOG_LEVEL;
+}
+
+#define LOG_INFO(...)  do{ if(ShouldPrintLog(LogLevel::INFO)) Log(LogLevel::INFO, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_WARN(...)  do{ if(ShouldPrintLog(LogLevel::WARN)) Log(LogLevel::WARN, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_ERROR(...) do{ if(ShouldPrintLog(LogLevel::ERROR)) Log(LogLevel::ERROR, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_FATAL(...) do{ if(ShouldPrintLog(LogLevel::FATAL)) Log(LogLevel::FATAL, FormatString(__VA_ARGS__)); }while(0)
