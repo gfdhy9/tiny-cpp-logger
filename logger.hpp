@@ -19,6 +19,21 @@ static std::mutex log_mtx;
 static std::string current_log_date;
 static LogLevel MIN_LOG_LEVEL = LogLevel::INFO;
 
+inline void CloseFile(){
+	std::lock_guard<std::mutex> lock(log_mtx);
+	if(log_file.is_open())
+		log_file.close();
+}
+
+struct LogFinalGuard
+{
+    ~LogFinalGuard()
+    {
+        CloseFile();
+    }
+};
+static LogFinalGuard log_guard;
+
 inline std::string GetTodayDate(){
 	std::time_t now = std::time(nullptr);
     std::tm local_tm = *std::localtime(&now);
@@ -47,12 +62,6 @@ inline void InitFile(){
 		log_file << "==================== Program Start ====================" << std::endl;
 	}
 	log_inited = true; 
-}
-
-inline void CloseFile(){
-	std::lock_guard<std::mutex> lock(log_mtx);
-	if(log_file.is_open())
-		log_file.close();
 }
 
 inline std::string GetTimeStamp(){
