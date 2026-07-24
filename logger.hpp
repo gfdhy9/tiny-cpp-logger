@@ -94,6 +94,17 @@ inline std::string FormatString(const char* fmt, ...){
     return std::string(buf);
 }
 
+inline std::string SanitizeMessage(const std::string& src){
+    std::string res = src;
+    for (char& c : res){
+        if (c == '\n' || c == '\r' || c == '\t'){
+    	    c = ' ';
+        }
+    }
+    return res;
+}
+
+
 inline void Log (LogLevel level, const std::string& msg){
 	const char* levelStr = "UNKNOWN";
 	
@@ -130,7 +141,8 @@ inline void Log (LogLevel level, const std::string& msg){
 		}
 	}
 	std::string time = GetTimeStamp();
-	std::string logContent = "[" + time + "] [" + levelStr + "] " + msg; 
+	std::string safe_msg = SanitizeMessage(msg);
+	std::string logContent = "[" + time + "] [" + levelStr + "] " + safe_msg; 
 	if(log_file.is_open()){
 		log_file << logContent << std::endl;
 		log_file.flush();
