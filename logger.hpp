@@ -104,10 +104,8 @@ inline std::string SanitizeMessage(const std::string& src){
     return res;
 }
 
-
 inline void Log (LogLevel level, const std::string& msg){
 	const char* levelStr = "UNKNOWN";
-	
 	switch (level)
 	{
 	case LogLevel::INFO:
