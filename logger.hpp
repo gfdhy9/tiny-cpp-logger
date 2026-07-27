@@ -18,6 +18,8 @@ static std::ofstream log_file;
 static std::mutex log_mtx;
 static std::string current_log_date;
 static LogLevel MIN_LOG_LEVEL = LogLevel::INFO;
+constexpr size_t LOGGER_BUF_SIZE = 256;
+
 
 inline void CloseFile(){
 	std::lock_guard<std::mutex> lock(log_mtx);
@@ -49,7 +51,7 @@ inline std::string GetDailyLogName(){
 inline void InitFile(){
 	static bool log_inited = false;
 	std::lock_guard<std::mutex> lock(log_mtx);
-	if(log_inited == true){
+	if(log_inited){
 		return;
 	}
 	std::string today = GetTodayDate();
@@ -85,10 +87,10 @@ inline LogLevel GetMinLogLevel(){
 inline std::string FormatString(const char* fmt, ...){
     va_list args;
     va_start(args, fmt);
-    char buf[256] = {0};
-    int ret = vsnprintf(buf, sizeof(buf), fmt, args);
+    char buf[LOGGER_BUF_SIZE] = {0};
+    int ret = vsnprintf(buf, LOGGER_BUF_SIZE, fmt, args);
     va_end(args);
-    if (ret < 0 || ret >= static_cast<int>(sizeof(buf))){
+    if (ret < 0 || ret >= static_cast<int>(LOGGER_BUF_SIZE)){
         std::cout << "[WARN] Log message truncated, max length 256" << std::endl;
     }
     return std::string(buf);
