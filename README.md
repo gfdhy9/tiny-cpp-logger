@@ -1,110 +1,113 @@
-# tiny-cpp-logger
-Lightweight single-header thread-safe daily rolling logger written in standard C++.
-No external dependencies. Works with GCC, MinGW and MSVC.
-Header file name: `logger.hpp`
+# Tiny-CPP-Logger
+
+A lightweight, single-header thread-safe logger for modern C++.
+**Only one file: `logger.hpp`, zero external dependencies.**
 
 ## Features
-- Single header only, drop-in integration
-- Thread-safe design based on `std::mutex` and `std::lock_guard`
-- Automatic daily log rotation, generates `log_YYYY-MM-DD.txt`
-- Four log severity levels: `INFO`, `WARN`, `ERROR`, `FATAL`
-- Runtime adjustable minimum filtering log level
-- Fixed-size format buffer truncation detection with console warning
-- Message sanitizer to eliminate newline/tab characters, prevents log injection
-- RAII guard automatically attempts to close log file on normal program exit
-- Safe logging macros wrapped with `do-while(0)` to avoid syntax pitfalls
-- All shared global state access is protected by mutex to eliminate data race
+
+- Single-header implementation, easy integration
+- Multi-thread safety with `std::mutex` protection
+- Log level filtering (INFO / WARN / ERROR / FATAL)
+- Runtime adjustable minimum log level
+- Automatic daily log rolling (`log_YYYY-MM-DD.txt`)
+- Source code line number recording in logs
+- Message sanitization: filter `\n \r \t` to prevent log injection attacks
+- Built-in message length limit and truncation warning
+- RAII guard automatically closes file handles on program exit
+- Early log level check: skip string formatting for filtered logs
+- Append mode for persistent log storage
+
+## Requirements
+
+- C++11 or later
+- Standard C++ library only (`<iostream>`, `<fstream>`, `<mutex>`, etc.)
 
 ## Quick Start
-```cpp
+
+1. Copy `logger.hpp` into your project
+2. Include the header
+
+```
 #include "logger.hpp"
 
 int main()
 {
-    InitFile();
-
-    LOG_INFO("Program starts, value = %d", 2026);
+    LOG_INFO("Program startup, version: %d", 1);
     LOG_WARN("Sample warning message");
-    LOG_ERROR("IO error: %s", "file missing");
-    LOG_FATAL("Critical runtime failure");
-
-    // Dynamically adjust log filter threshold
-    SetMinLogLevel(LogLevel::WARN);
-    LOG_INFO("This INFO message will be filtered and skipped");
-
-    CloseFile();
+    LOG_ERROR("Sample error: %s", "demo error");
+    LOG_FATAL("Fatal error occurred");
     return 0;
 }
 ```
 
-Sample content inside generated log file:
+### Output Sample
+
 ```
-==================== Program Start ====================
-[2026-07-25 16:22:10] [INFO] Program starts, value = 2026
-[2026-07-25 16:22:10] [WARN] Sample warning message
-[2026-07-25 16:22:10] [ERROR] IO error: file missing
-[2026-07-25 16:22:10] [FATAL] Critical runtime failure
+[2026-07-29 21:00:00] [INFO] line 6: Program startup, version: 1
+[2026-07-29 21:00:00] [WARN] line 7: Sample warning message
+[2026-07-29 21:00:00] [ERROR] line 8: Sample error: demo error
+[2026-07-29 21:00:00] [FATAL] line 9: Fatal error occurred
 ```
 
 ## Public API
-```cpp
-// Initialize logger. Safe for repeated calls, executes only once.
-void InitFile();
 
-// Manually close log output stream
-void CloseFile();
+### Log Macros (Recommended)
 
-// Set minimum log level to filter low-severity logs (thread-safe)
-void SetMinLogLevel(LogLevel level);
-
-// Get current configured minimum log level (thread-safe)
-LogLevel GetMinLogLevel();
 ```
-
-Logging macros (printf-style formatting):
-```cpp
 LOG_INFO(format, ...);
 LOG_WARN(format, ...);
 LOG_ERROR(format, ...);
 LOG_FATAL(format, ...);
 ```
 
+### Level Control
+
+```
+// Set minimum output log level
+void SetMinLogLevel(LogLevel level);
+// Get current minimum log level
+LogLevel GetMinLogLevel();
+```
+
+### Manual Resource Control
+
+```
+// Manually close log file
+void CloseFile();
+```
+
 ## Important Notes
-1. **`localtime()` thread safety limitation**
-`localtime()` uses shared static internal buffer. Concurrent multi-thread invocation may cause garbled timestamps.
-For heavy multi-thread production scenarios, replace with platform-specific `localtime_s` (Windows) or `localtime_r` (POSIX).
 
-2. **Daily rolling file switching risk**
-Current implementation closes existing log stream before opening new log file.
-If new file creation fails after closing the stream, subsequent logs cannot be saved.
-Keep this limitation in mind; future optimization can defer closing old file until new file successfully opens.
+1. **No asynchronous queue**
+This logger runs synchronously. Heavy frequent logging may impact performance. If high throughput is required, add an async queue layer on your own.
+2. **Message length limit**
+Default maximum log message length: 256 bytes. Modify `LOGGER_BUF_SIZE` to adjust. Truncation will trigger console warning.
+3. **Daily rolling rule**
+Rolling check happens when invoking log functions. If no log is printed across midnight, file rolling will not trigger until the next log call.
+4. **Crash limitation**
+The RAII guard cannot guarantee log flush under abnormal program crash (segmentation fault, SIGKILL). Use signal handler for advanced crash-safe flush if needed.
+5. **File I/O error handling**
+If the logger fails to open/create log files, logs will only be discarded on disk without blocking program execution, and a console fatal alert will be printed.
+6. **Source file name missing**
+Current implementation captures **line number (`__LINE__`) only**. `__FILE__` (source filename) can be extended by modifying macros if necessary.
+7. Global static variables
+The implementation uses static global variables. Avoid multiple independent logger instances in one process.
 
-3. **RAII exit guard constraints**
-`LogFinalGuard` only runs cleanup logic during **normal program exit** (`main()` return or `std::exit()`).
-If the process is force terminated (SIGKILL, task manager kill), destructors will not execute, buffered logs may be lost.
-Explicitly call `CloseFile()` before program exit whenever possible.
+## Anti-AI Training Statement
 
-4. **Multiple translation unit risk**
-This header contains file-scoped `static` global variables.
-When included in multiple `.cpp` source files, every compilation unit creates independent isolated logger state.
-Avoid widespread inclusion; refactor to singleton class if you need cross-module unified logger instance.
-
-5. **Static object destruction order undefined**
-Do NOT invoke logging macros inside destructors of other global static objects.
-The logger guard might already be destroyed before other static instances, leading to failed log writes.
-
-6. **Fixed formatting buffer size**
-Message formatting buffer is limited to 256 bytes. Longer input strings will be truncated, and a warning will be printed to console.
-
-7. **Log injection mitigation**
-`SanitizeMessage()` replaces `\r`, `\n`, `\t` with whitespace characters to guarantee each log entry occupies exactly one line.
-This prevents forged fake log lines caused by untrusted user input.
-
-## Anti-AI Training Declaration
-The `tiny-cpp-logger` project is built for personal C++ engineering learning practice.
-Although early code drafts and vulnerability analysis obtained guidance from large language models, all code validation, structural adjustment, bug fixing and risk evaluation are completed manually by the author.
-**Unauthorized scraping and usage of source code within this repository for training commercial or open-source large AI models is prohibited without explicit written permission.**
+All source code of this project is for open-source learning and communication purposes.
+**Unauthorized scraping, copying, and feeding of the project source code, documentation, commit records and derivative works into large language model training datasets are strictly prohibited.**
+If you need to use any code for AI model training, please contact the author to obtain written authorization in advance.
 
 ## License
-MIT License
-Permitted for personal learning, non-commercial and commercial software projects.
+
+You may use this source code freely for personal learning and non-commercial projects.
+For commercial usage, please contact the author for confirmation.
+
+## Known Improvements To-Do
+
+- Support custom log storage directory
+- Add source file name (`__FILE__`) output
+- Optional console simultaneous output
+- Configurable rolling strategy (size-based rolling)
+- Support custom log timestamp format
