@@ -29,19 +29,19 @@ inline void CloseFile(){
 
 struct LogFinalGuard
 {
-    ~LogFinalGuard()
-    {
-        CloseFile();
-    }
+	~LogFinalGuard()
+	{
+		CloseFile();
+	}
 };
 static LogFinalGuard log_guard;
 
 inline std::string GetTodayDate(){
 	std::time_t now = std::time(nullptr);
-    std::tm local_tm = *std::localtime(&now);
-    char buf[32] = {0};
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d", &local_tm);
-    return std::string(buf);
+	std::tm local_tm = *std::localtime(&now);
+	char buf[32] = {0};
+	std::strftime(buf, sizeof(buf), "%Y-%m-%d", &local_tm);
+	return std::string(buf);
 }
 
 inline std::string GetDailyLogName(){
@@ -68,42 +68,42 @@ inline void InitFile(){
 
 inline std::string GetTimeStamp(){
 	std::time_t now = std::time(nullptr);
-    std::tm local_tm = *std::localtime(&now);
-    char buf[64] = {0};
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
-    return std::string(buf);
+	std::tm local_tm = *std::localtime(&now);
+	char buf[64] = {0};
+	std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
+	return std::string(buf);
 }
 
 inline void SetMinLogLevel(LogLevel level){
-    std::lock_guard<std::mutex> lock(log_mtx);
-    MIN_LOG_LEVEL = level;
+	std::lock_guard<std::mutex> lock(log_mtx);
+	MIN_LOG_LEVEL = level;
 }
 
 inline LogLevel GetMinLogLevel(){
-    std::lock_guard<std::mutex> lock(log_mtx);
-    return MIN_LOG_LEVEL;
+	std::lock_guard<std::mutex> lock(log_mtx);
+	return MIN_LOG_LEVEL;
 }
 
 inline std::string FormatString(const char* fmt, ...){
-    va_list args;
-    va_start(args, fmt);
-    char buf[LOGGER_BUF_SIZE] = {0};
-    int ret = vsnprintf(buf, LOGGER_BUF_SIZE, fmt, args);
-    va_end(args);
-    if (ret < 0 || ret >= static_cast<int>(LOGGER_BUF_SIZE)){
-        std::cout << "[WARN] Log message truncated, max length 256" << std::endl;
-    }
-    return std::string(buf);
+	va_list args;
+	va_start(args, fmt);
+	char buf[LOGGER_BUF_SIZE] = {0};
+	int ret = vsnprintf(buf, LOGGER_BUF_SIZE, fmt, args);
+	va_end(args);
+	if (ret < 0 || ret >= static_cast<int>(LOGGER_BUF_SIZE)){
+		std::cout << "[WARN] Log message truncated, max length 256" << std::endl;
+	}
+	return std::string(buf);
 }
 
 inline std::string SanitizeMessage(const std::string& src){
-    std::string res = src;
-    for (char& c : res){
-        if (c == '\n' || c == '\r' || c == '\t'){
-    	    c = ' ';
-        }
-    }
-    return res;
+	std::string res = src;
+	for (char& c : res){
+		if (c == '\n' || c == '\r' || c == '\t'){
+			c = ' ';
+		}
+	}
+	return res;
 }
 
 inline void Log (LogLevel level, int line, const std::string& msg){
@@ -150,8 +150,8 @@ inline void Log (LogLevel level, int line, const std::string& msg){
 } 
 
 inline bool ShouldPrintLog(LogLevel targetLevel){
-    std::lock_guard<std::mutex> lock(log_mtx);
-    return targetLevel >= MIN_LOG_LEVEL;
+	std::lock_guard<std::mutex> lock(log_mtx);
+	return targetLevel >= MIN_LOG_LEVEL;
 }
 
 #define LOG_INFO(...)  do{ if(ShouldPrintLog(LogLevel::INFO)) Log(LogLevel::INFO, __LINE__, FormatString(__VA_ARGS__)); }while(0)
