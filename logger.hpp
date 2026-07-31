@@ -36,16 +36,22 @@ struct LogFinalGuard
 };
 static LogFinalGuard log_guard;
 
-inline std::string GetTodayDate(){
-	std::time_t now = std::time(nullptr);
-	std::tm local_tm = *std::localtime(&now);
+inline std::string GetTodayDate(std::time_t ts){
+	std::tm local_tm = *std::localtime(&ts);
 	char buf[32] = {0};
 	std::strftime(buf, sizeof(buf), "%Y-%m-%d", &local_tm);
 	return std::string(buf);
 }
 
-inline std::string GetDailyLogName(){
-	return "log_" + GetTodayDate() + ".txt";
+inline std::string GetTimeStamp(std::time_t ts){
+	std::tm local_tm = *std::localtime(&ts);
+	char buf[64] = {0};
+	std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
+	return std::string(buf);
+}
+
+inline std::string GetDailyLogName(std::time_t ts){
+	return "log_" + GetTodayDate(ts) + ".txt";
 }
 
 inline void InitFile(){
@@ -54,8 +60,9 @@ inline void InitFile(){
 	if(log_inited){
 		return;
 	}
-	std::string today = GetTodayDate();
-	std::string filename = GetDailyLogName();
+	std::time_t now_ts = std::time(nullptr);
+	std::string today = GetTodayDate(now_ts);
+	std::string filename = GetDailyLogName(now_ts);
 	current_log_date = today;
 	log_file.open(filename, std::ios::out | std::ios::app);
 	if(!log_file.is_open()){
@@ -64,14 +71,6 @@ inline void InitFile(){
 		log_file << "==================== Program Start ====================" << std::endl;
 	}
 	log_inited = true; 
-}
-
-inline std::string GetTimeStamp(){
-	std::time_t now = std::time(nullptr);
-	std::tm local_tm = *std::localtime(&now);
-	char buf[64] = {0};
-	std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
-	return std::string(buf);
 }
 
 inline void SetMinLogLevel(LogLevel level){
@@ -126,9 +125,10 @@ inline void Log (LogLevel level, int line, const std::string& msg){
 		break;
 	}
 	std::lock_guard<std::mutex> lock(log_mtx);
-	std::string today = GetTodayDate();
+	std::time_t now_ts = std::time(nullptr);
+	std::string today = GetTodayDate(now_ts);
 	if(today != current_log_date){
-		std::string newFile = GetDailyLogName();
+		std::string newFile = GetDailyLogName(now_ts);
 		std::ofstream test(newFile, std::ios::out | std::ios::app);
 		if (test.is_open()){
 			test.close();
@@ -140,7 +140,7 @@ inline void Log (LogLevel level, int line, const std::string& msg){
 			std::cout << "[FATAL] Failed to create new daily log file: " << newFile << std::endl;
 		}
 	}
-	std::string time = GetTimeStamp();
+	std::string time = GetTimeStamp(now_ts);
 	std::string safe_msg = SanitizeMessage(msg);
 	std::string logContent = "[" + time + "] [" + levelStr + "] line " + std::to_string(line) + ": " + safe_msg; 
 	if(log_file.is_open()){
