@@ -105,7 +105,7 @@ inline std::string SanitizeMessage(const std::string& src){
 	return res;
 }
 
-inline void Log (LogLevel level, int line, const std::string& msg){
+inline void Log (LogLevel level, const char* file, int line, const std::string& msg){
 	const char* levelStr = "UNKNOWN";
 	switch (level)
 	{
@@ -142,7 +142,7 @@ inline void Log (LogLevel level, int line, const std::string& msg){
 	}
 	std::string time = GetTimeStamp(now_ts);
 	std::string safe_msg = SanitizeMessage(msg);
-	std::string logContent = "[" + time + "] [" + levelStr + "] line " + std::to_string(line) + ": " + safe_msg; 
+	std::string logContent = "[" + time + "] [" + levelStr + "] " + file + " line " + std::to_string(line) + ": " + safe_msg; 
 	if(log_file.is_open()){
 		log_file << logContent << std::endl;
 		log_file.flush();
@@ -154,7 +154,7 @@ inline bool ShouldPrintLog(LogLevel targetLevel){
 	return targetLevel >= MIN_LOG_LEVEL;
 }
 
-#define LOG_INFO(...)  do{ if(ShouldPrintLog(LogLevel::INFO)) Log(LogLevel::INFO, __LINE__, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_WARN(...)  do{ if(ShouldPrintLog(LogLevel::WARN)) Log(LogLevel::WARN, __LINE__, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_ERROR(...) do{ if(ShouldPrintLog(LogLevel::ERROR)) Log(LogLevel::ERROR, __LINE__, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_FATAL(...) do{ if(ShouldPrintLog(LogLevel::FATAL)) Log(LogLevel::FATAL, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_INFO(...)  do{ if(ShouldPrintLog(LogLevel::INFO)) Log(LogLevel::INFO, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_WARN(...)  do{ if(ShouldPrintLog(LogLevel::WARN)) Log(LogLevel::WARN, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_ERROR(...) do{ if(ShouldPrintLog(LogLevel::ERROR)) Log(LogLevel::ERROR, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_FATAL(...) do{ if(ShouldPrintLog(LogLevel::FATAL)) Log(LogLevel::FATAL, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
