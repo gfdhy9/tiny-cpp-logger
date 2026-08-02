@@ -144,7 +144,7 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 	std::string safe_msg = SanitizeMessage(msg);
 	std::string logContent = "[" + time + "] [" + levelStr + "] " + file + " line " + std::to_string(line) + ": " + safe_msg; 
 	if(log_file.is_open()){
-		log_file << logContent << std::endl;
+		log_file << logContent << '\n';
 		log_file.flush();
 	}
 } 
