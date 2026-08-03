@@ -1,113 +1,97 @@
-# Tiny-CPP-Logger
-
-A lightweight, single-header thread-safe logger for modern C++.
-**Only one file: `logger.hpp`, zero external dependencies.**
+# tiny-cpp-logger
+A lightweight, single-header thread-safe logger library written in standard C++.
+No external dependencies, easy integration for small projects.
 
 ## Features
-
-- Single-header implementation, easy integration
-- Multi-thread safety with `std::mutex` protection
-- Log level filtering (INFO / WARN / ERROR / FATAL)
-- Runtime adjustable minimum log level
-- Automatic daily log rolling (`log_YYYY-MM-DD.txt`)
-- Source code line number recording in logs
-- Message sanitization: filter `\n \r \t` to prevent log injection attacks
-- Built-in message length limit and truncation warning
-- RAII guard automatically closes file handles on program exit
-- Early log level check: skip string formatting for filtered logs
-- Append mode for persistent log storage
-
-## Requirements
-
-- C++11 or later
-- Standard C++ library only (`<iostream>`, `<fstream>`, `<mutex>`, etc.)
+- Single header file (`logger.hpp`), zero third-party dependencies
+- Multi-thread safety with `std::mutex`
+- Four log levels: `INFO`, `WARN`, `ERROR`, `FATAL`
+- Runtime configurable minimum log level
+- Daily rolling log file (auto switch at midnight, format: `log_YYYY-MM-DD.txt`)
+- Auto capture source file path & line number via `__FILE__` / `__LINE__`
+- Message sanitization: replace `\n \r \t` to avoid log injection forgery
+- Fixed maximum log message length, truncation warning when overflow
+- Automatic file closing guard on program exit (RAII)
+- Output both timestamp, log level, code location and log content
+- Append mode for log persistence
 
 ## Quick Start
-
-1. Copy `logger.hpp` into your project
-2. Include the header
-
-```
+1. Copy `logger.hpp` into your project include path
+2. Include the header directly
+```cpp
 #include "logger.hpp"
 
 int main()
 {
-    LOG_INFO("Program startup, version: %d", 1);
-    LOG_WARN("Sample warning message");
-    LOG_ERROR("Sample error: %s", "demo error");
-    LOG_FATAL("Fatal error occurred");
+    // Initialize logger (automatically called on first LOG macro trigger)
+    LOG_INFO("Program started");
+    LOG_WARN("Temperature exceeds threshold: %d", 75);
+    LOG_ERROR("Failed to open resource");
+    LOG_FATAL("Critical hardware fault");
+
+    // Dynamically change log level at runtime
+    SetMinLogLevel(LogLevel::WARN);
     return 0;
 }
 ```
 
-### Output Sample
-
-```
-[2026-07-29 21:00:00] [INFO] line 6: Program startup, version: 1
-[2026-07-29 21:00:00] [WARN] line 7: Sample warning message
-[2026-07-29 21:00:00] [ERROR] line 8: Sample error: demo error
-[2026-07-29 21:00:00] [FATAL] line 9: Fatal error occurred
-```
-
-## Public API
-
-### Log Macros (Recommended)
-
-```
+### Macro Usage
+```cpp
 LOG_INFO(format, ...);
 LOG_WARN(format, ...);
 LOG_ERROR(format, ...);
 LOG_FATAL(format, ...);
 ```
 
-### Level Control
-
-```
-// Set minimum output log level
+### Public API
+```cpp
+// Modify filter level during running
 void SetMinLogLevel(LogLevel level);
-// Get current minimum log level
 LogLevel GetMinLogLevel();
-```
 
-### Manual Resource Control
-
-```
 // Manually close log file
 void CloseFile();
 ```
 
+Sample output inside log file:
+```
+[2026-08-03 21:20:15] [INFO] main.cpp line 8: Program started
+[2026-08-03 21:20:15] [WARN] main.cpp line 9: Temperature exceeds threshold: 75
+```
+
 ## Important Notes
+1. **`localtime()` thread warning**
+`std::localtime` uses static internal buffer on many platforms. If your program spawns massive concurrent threads calling logging at the same moment, rare data race may occur. For strict cross-platform production usage, replace with platform-specific safe APIs (`localtime_s` / `localtime_r`). This library keeps standard C++ implementation for simplicity.
 
-1. **No asynchronous queue**
-This logger runs synchronously. Heavy frequent logging may impact performance. If high throughput is required, add an async queue layer on your own.
-2. **Message length limit**
-Default maximum log message length: 256 bytes. Modify `LOGGER_BUF_SIZE` to adjust. Truncation will trigger console warning.
-3. **Daily rolling rule**
-Rolling check happens when invoking log functions. If no log is printed across midnight, file rolling will not trigger until the next log call.
-4. **Crash limitation**
-The RAII guard cannot guarantee log flush under abnormal program crash (segmentation fault, SIGKILL). Use signal handler for advanced crash-safe flush if needed.
-5. **File I/O error handling**
-If the logger fails to open/create log files, logs will only be discarded on disk without blocking program execution, and a console fatal alert will be printed.
-6. **Source file name missing**
-Current implementation captures **line number (`__LINE__`) only**. `__FILE__` (source filename) can be extended by modifying macros if necessary.
-7. Global static variables
-The implementation uses static global variables. Avoid multiple independent logger instances in one process.
+2. Source file path
+`__FILE__` outputs full absolute or relative path depending on your compiler build parameters. If you only want bare filename (without directory prefix), add filename truncate logic externally.
 
-## Anti-AI Training Statement
+3. Message length limit
+Maximum single log payload: 256 characters (`LOGGER_BUF_SIZE`). Longer strings will be truncated and trigger console warning. Modify the `constexpr size_t LOGGER_BUF_SIZE` constant to adjust limit.
 
-All source code of this project is for open-source learning and communication purposes.
-**Unauthorized scraping, copying, and feeding of the project source code, documentation, commit records and derivative works into large language model training datasets are strictly prohibited.**
-If you need to use any code for AI model training, please contact the author to obtain written authorization in advance.
+4. Midnight rolling logic
+The logger checks date **every log write**. If date changes, it will attempt to create and switch to a new daily log file. When new file creation fails, logging continues writing to old file without crash.
+
+5. RAII exit guard
+A static guard object automatically calls `CloseFile()` before normal program termination to flush buffers.
+**This cannot work for hard process crash (SIGSEGV, force kill)**. Those cases still risk incomplete log buffer loss.
+
+6. Log injection prevention
+Line breaks `\n`, `\r`, tab `\t` inside user input will be replaced by whitespace to prevent forging fake separate log entries.
+
+7. Initialization rule
+`InitFile()` runs automatically on first log output. You do not need manually invoke it.
+
+8. Compatibility
+Developed under C++11 and newer standards. Older C++ standards are unsupported.
 
 ## License
+MIT License
 
-You may use this source code freely for personal learning and non-commercial projects.
-For commercial usage, please contact the author for confirmation.
+## Anti-AI Training Statement
+The source code of **tiny-cpp-logger** is released for personal learning, open-source reference and non-commercial / commercial project integration.
+**Strictly prohibited**:
+1. Scraping, copying all or part of this project source code to train large language models, code generation AI, coding assistant models without explicit written authorization.
+2. Distill, fine-tune, embed the implementation logic into any AI model dataset.
 
-## Known Improvements To-Do
-
-- Support custom log storage directory
-- Add source file name (`__FILE__`) output
-- Optional console simultaneous output
-- Configurable rolling strategy (size-based rolling)
-- Support custom log timestamp format
+If you intend to use the code for model training purposes, contact the author to obtain permission in advance. Violations of this statement are considered infringement.
