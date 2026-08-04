@@ -5,7 +5,8 @@
 #include<ctime>
 #include<cstdarg>
 #include<fstream>
-#include <mutex>
+#include<mutex>
+#include<cstring>
 
 enum class LogLevel {
 	INFO,
@@ -95,6 +96,21 @@ inline std::string FormatString(const char* fmt, ...){
 	return std::string(buf);
 }
 
+inline std::string GetFileName(const char* file){
+	if(file == nullptr){
+		return "";
+	}
+	std::string p(file);
+	int id = -1;
+	for (int i = p.size() - 1;i>=0;i--){
+		if(p[i] == '/' || p[i] == '\\'){
+			id = i;
+			break;
+		}
+	}
+	return p.substr(id + 1);
+} 
+
 inline std::string SanitizeMessage(const std::string& src){
 	std::string res = src;
 	for (char& c : res){
@@ -142,7 +158,7 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 	}
 	std::string time = GetTimeStamp(now_ts);
 	std::string safe_msg = SanitizeMessage(msg);
-	std::string logContent = "[" + time + "] [" + levelStr + "] " + file + " line " + std::to_string(line) + ": " + safe_msg; 
+	std::string logContent = "[" + time + "] [" + levelStr + "] " + GetFileName(file) + ": " + std::to_string(line) + ": " + safe_msg; 
 	if(log_file.is_open()){
 		log_file << logContent << '\n';
 		log_file.flush();
