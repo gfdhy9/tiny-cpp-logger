@@ -19,6 +19,7 @@ static std::ofstream log_file;
 static std::mutex log_mtx;
 static std::string current_log_date;
 static LogLevel MIN_LOG_LEVEL = LogLevel::INFO;
+static bool full_path_on = false; 
 constexpr size_t LOGGER_BUF_SIZE = 256;
 
 
@@ -158,7 +159,11 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 	}
 	std::string time = GetTimeStamp(now_ts);
 	std::string safe_msg = SanitizeMessage(msg);
-	std::string logContent = "[" + time + "] [" + levelStr + "] " + GetFileName(file) + ": " + std::to_string(line) + ": " + safe_msg; 
+	std::string file_name = file;
+	if(full_path_on == false){
+		file_name = GetFileName(file);
+	}
+	std::string logContent = "[" + time + "] [" + levelStr + "] " + file_name + ": " + std::to_string(line) + ": " + safe_msg; 
 	if(log_file.is_open()){
 		log_file << logContent << '\n';
 		log_file.flush();
