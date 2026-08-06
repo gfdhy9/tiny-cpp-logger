@@ -38,22 +38,20 @@ struct LogFinalGuard
 };
 static LogFinalGuard log_guard;
 
-inline std::string GetTodayDate(std::time_t ts){
-	std::tm local_tm = *std::localtime(&ts);
+inline std::string GetTodayDate(const std::tm& local_tm){
 	char buf[32] = {0};
 	std::strftime(buf, sizeof(buf), "%Y-%m-%d", &local_tm);
 	return std::string(buf);
 }
 
-inline std::string GetTimeStamp(std::time_t ts){
-	std::tm local_tm = *std::localtime(&ts);
+inline std::string GetTimeStamp(const std::tm& local_tm){
 	char buf[64] = {0};
 	std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &local_tm);
 	return std::string(buf);
 }
 
-inline std::string GetDailyLogName(std::time_t ts){
-	return "log_" + GetTodayDate(ts) + ".txt";
+inline std::string GetDailyLogName(const std::tm& local_tm){
+	return "log_" + GetTodayDate(local_tm) + ".txt";
 }
 
 inline void InitFile(){
@@ -63,8 +61,9 @@ inline void InitFile(){
 		return;
 	}
 	std::time_t now_ts = std::time(nullptr);
-	std::string today = GetTodayDate(now_ts);
-	std::string filename = GetDailyLogName(now_ts);
+	std::tm local_tm = *std::localtime(&now_ts);
+	std::string today = GetTodayDate(local_tm);
+	std::string filename = GetDailyLogName(local_tm);
 	current_log_date = today;
 	log_file.open(filename, std::ios::out | std::ios::app);
 	if(!log_file.is_open()){
@@ -142,10 +141,14 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 		break;
 	}
 	std::lock_guard<std::mutex> lock(log_mtx);
+	
 	std::time_t now_ts = std::time(nullptr);
-	std::string today = GetTodayDate(now_ts);
+	std::tm local_tm = *std::localtime(&now_ts);
+	std::string today = GetTodayDate(local_tm);
+	std::string time_str = GetTimeStamp(local_tm);
+	
 	if(today != current_log_date){
-		std::string newFile = GetDailyLogName(now_ts);
+		std::string newFile = GetDailyLogName(local_tm);
 		std::ofstream test(newFile, std::ios::out | std::ios::app);
 		if (test.is_open()){
 			test.close();
@@ -157,13 +160,12 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 			std::cout << "[FATAL] Failed to create new daily log file: " << newFile << std::endl;
 		}
 	}
-	std::string time = GetTimeStamp(now_ts);
 	std::string safe_msg = SanitizeMessage(msg);
 	std::string file_name = file;
 	if(full_path_on == false){
 		file_name = GetFileName(file);
 	}
-	std::string logContent = "[" + time + "] [" + levelStr + "] " + file_name + ": " + std::to_string(line) + ": " + safe_msg; 
+	std::string logContent = "[" + time_str + "] [" + levelStr + "] " + file_name + ": " + std::to_string(line) + ": " + safe_msg; 
 	if(log_file.is_open()){
 		log_file << logContent << '\n';
 		log_file.flush();
