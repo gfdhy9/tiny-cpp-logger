@@ -122,6 +122,10 @@ inline std::string SanitizeMessage(const std::string& src){
 }
 
 inline void Log (LogLevel level, const char* file, int line, const std::string& msg){
+	std::lock_guard<std::mutex> lock(log_mtx);
+	if(level < MIN_LOG_LEVEL){
+		return;
+	} 
 	const char* levelStr = "UNKNOWN";
 	switch (level)
 	{
@@ -140,8 +144,6 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 	default:
 		break;
 	}
-	std::lock_guard<std::mutex> lock(log_mtx);
-	
 	std::time_t now_ts = std::time(nullptr);
 	std::tm local_tm = *std::localtime(&now_ts);
 	std::string today = GetTodayDate(local_tm);
@@ -172,12 +174,7 @@ inline void Log (LogLevel level, const char* file, int line, const std::string& 
 	}
 } 
 
-inline bool ShouldPrintLog(LogLevel targetLevel){
-	std::lock_guard<std::mutex> lock(log_mtx);
-	return targetLevel >= MIN_LOG_LEVEL;
-}
-
-#define LOG_INFO(...)  do{ if(ShouldPrintLog(LogLevel::INFO)) Log(LogLevel::INFO, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_WARN(...)  do{ if(ShouldPrintLog(LogLevel::WARN)) Log(LogLevel::WARN, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_ERROR(...) do{ if(ShouldPrintLog(LogLevel::ERROR)) Log(LogLevel::ERROR, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
-#define LOG_FATAL(...) do{ if(ShouldPrintLog(LogLevel::FATAL)) Log(LogLevel::FATAL, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_INFO(...)  do{ Log(LogLevel::INFO, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_WARN(...)  do{ Log(LogLevel::WARN, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_ERROR(...) do{ Log(LogLevel::ERROR, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
+#define LOG_FATAL(...) do{ Log(LogLevel::FATAL, __FILE__, __LINE__, FormatString(__VA_ARGS__)); }while(0)
