@@ -29,15 +29,6 @@ inline void CloseFile(){
 		log_file.close();
 }
 
-struct LogFinalGuard
-{
-	~LogFinalGuard()
-	{
-		CloseFile();
-	}
-};
-static LogFinalGuard log_guard;
-
 inline std::string GetTodayDate(const std::tm& local_tm){
 	char buf[32] = {0};
 	std::strftime(buf, sizeof(buf), "%Y-%m-%d", &local_tm);
